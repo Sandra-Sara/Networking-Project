@@ -1,134 +1,150 @@
 """
 Register window for new users (CryptPort)
+Styled consistently with Server Configuration page
+Uses built-in emoji icons (no external image assets)
 """
 
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QLineEdit, QLabel,
-    QPushButton, QMessageBox, QHBoxLayout
+    QWidget, QVBoxLayout, QLineEdit, QLabel, QPushButton,
+    QMessageBox, QHBoxLayout, QFrame
 )
-from PyQt5.QtCore import Qt, pyqtSignal, QSize
-from PyQt5.QtGui import QFont, QIcon
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QFont, QColor, QPalette
 
 
 class RegisterWindow(QWidget):
-    # ✅ Signal emitted when registration succeeds
-    register_success = pyqtSignal()
+    register_success = pyqtSignal()  # ✅ Emits when registration succeeds
 
     def __init__(self):
         super().__init__()
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("Register - cryptPort")
-        self.setGeometry(100, 100,1700,700)  # Bigger window
+        """Setup the consistent UI"""
+        self.setWindowTitle("Register - CryptPort")
+        self.setGeometry(200, 100, 1000, 700)
 
-        layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignCenter)
-        layout.setSpacing(15)
+        # Background color (soft blue like Config Page)
+        palette = QPalette()
+        palette.setColor(QPalette.Window, QColor("#E3F2FD"))
+        self.setAutoFillBackground(True)
+        self.setPalette(palette)
 
-        # --- Fonts ---
-        title_font = QFont("Segoe UI", 22, QFont.Bold)
-        subtitle_font = QFont("Segoe UI", 12)
-        input_font = QFont("Segoe UI", 12)
-        button_font = QFont("Segoe UI", 13, QFont.Bold)
+        # --- Main Layout ---
+        main_layout = QVBoxLayout()
+        main_layout.setAlignment(Qt.AlignCenter)
+        main_layout.setSpacing(30)
 
-        # --- Title Section ---
-        title_label = QLabel("Welcome to cryptPort")
-        title_label.setFont(title_font)
-        title_label.setAlignment(Qt.AlignCenter)
+        # --- Title ---
+        title = QLabel("🧩 Create Your CryptPort Account")
+        title.setFont(QFont("Segoe UI", 26, QFont.Bold))
+        title.setAlignment(Qt.AlignCenter)
 
-        subtitle_label = QLabel("A simple and reliable file transfer platform")
-        subtitle_label.setFont(subtitle_font)
-        subtitle_label.setAlignment(Qt.AlignCenter)
-        subtitle_label.setStyleSheet("color: gray; font-weight: bold;")
+        subtitle = QLabel("Secure file sharing starts here")
+        subtitle.setFont(QFont("Segoe UI", 13))
+        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setStyleSheet("color: gray; font-weight: 500;")
 
-        # --- Username Field with Icon ---
-        username_layout = QHBoxLayout()
-        username_icon = QLabel()
-        username_icon.setPixmap(QIcon("assets/icons/user.png").pixmap(QSize(24, 24)))
-        username_input = QLineEdit()
-        username_input.setPlaceholderText("Username")
-        username_input.setFont(input_font)
-        username_layout.addWidget(username_icon)
-        username_layout.addWidget(username_input)
+        main_layout.addWidget(title)
+        main_layout.addWidget(subtitle)
 
-        # --- Email Field with Icon ---
-        email_layout = QHBoxLayout()
-        email_icon = QLabel()
-        email_icon.setPixmap(QIcon("assets/icons/email.png").pixmap(QSize(24, 24)))
-        email_input = QLineEdit()
-        email_input.setPlaceholderText("Email")
-        email_input.setFont(input_font)
-        email_layout.addWidget(email_icon)
-        email_layout.addWidget(email_input)
-
-        # --- Password Field with Icon ---
-        password_layout = QHBoxLayout()
-        password_icon = QLabel()
-        password_icon.setPixmap(QIcon("assets/icons/lock.png").pixmap(QSize(24, 24)))
-        password_input = QLineEdit()
-        password_input.setPlaceholderText("Password")
-        password_input.setEchoMode(QLineEdit.Password)
-        password_input.setFont(input_font)
-        password_layout.addWidget(password_icon)
-        password_layout.addWidget(password_input)
-
-        # --- Confirm Password Field with Icon ---
-        confirm_layout = QHBoxLayout()
-        confirm_icon = QLabel()
-        confirm_icon.setPixmap(QIcon("assets/icons/lock.png").pixmap(QSize(24, 24)))
-        confirm_input = QLineEdit()
-        confirm_input.setPlaceholderText("Confirm Password")
-        confirm_input.setEchoMode(QLineEdit.Password)
-        confirm_input.setFont(input_font)
-        confirm_layout.addWidget(confirm_icon)
-        confirm_layout.addWidget(confirm_input)
-
-        # --- Register Button ---
-        register_button = QPushButton("Register")
-        register_button.setFont(button_font)
-        register_button.setIcon(QIcon("assets/icons/register.png"))
-        register_button.setIconSize(QSize(22, 22))
-        register_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                padding: 10px;
-                border-radius: 8px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
+        # --- Centered White Box ---
+        box = QFrame()
+        box.setStyleSheet("""
+            QFrame {
+                background-color: white;
+                border-radius: 18px;
+                border: 2px solid #BBDEFB;
             }
         """)
-        register_button.clicked.connect(self.handle_register)
+        box.setFixedWidth(550)
+        box_layout = QVBoxLayout(box)
+        box_layout.setContentsMargins(60, 50, 60, 50)
+        box_layout.setSpacing(22)
 
-        # Assign inputs to self
-        self.username_input = username_input
-        self.email_input = email_input
-        self.password_input = password_input
-        self.confirm_input = confirm_input
-        self.register_button = register_button
+        input_font = QFont("Segoe UI", 12)
+        label_font = QFont("Segoe UI", 13, QFont.Bold)
 
-        # --- Add Widgets to Layout ---
-        layout.addWidget(title_label)
-        layout.addWidget(subtitle_label)
-        layout.addSpacing(15)
-        layout.addLayout(username_layout)
-        layout.addLayout(email_layout)
-        layout.addLayout(password_layout)
-        layout.addLayout(confirm_layout)
-        layout.addWidget(register_button)
+        # ✅ Helper to create consistent input rows
+        def create_input_row(label_text, placeholder, echo=False):
+            layout = QHBoxLayout()
+            layout.setSpacing(15)
 
-        self.setLayout(layout)
+            label = QLabel(label_text)
+            label.setFont(label_font)
+            label.setAlignment(Qt.AlignRight)
 
+            field = QLineEdit()
+            field.setPlaceholderText(placeholder)
+            field.setFont(input_font)
+            field.setStyleSheet("""
+                QLineEdit {
+                    border: 1.5px solid #90CAF9;
+                    border-radius: 10px;
+                    padding: 10px 12px;
+                    background-color: #FAFAFA;
+                }
+                QLineEdit:focus {
+                    border: 2px solid #42A5F5;
+                    background-color: white;
+                }
+            """)
+            if echo:
+                field.setEchoMode(QLineEdit.Password)
+
+            layout.addWidget(label)
+            layout.addWidget(field)
+            return layout, field
+
+        # --- Input Fields (with emoji icons) ---
+        user_layout, self.username_input = create_input_row("👤 Username:", "Enter your username")
+        email_layout, self.email_input = create_input_row("✉️ Email:", "Enter your email address")
+        pass_layout, self.password_input = create_input_row("🔒 Password:", "Enter password", echo=True)
+        confirm_layout, self.confirm_input = create_input_row("🔑 Confirm:", "Confirm password", echo=True)
+
+        # --- Register Button ---
+        self.register_button = QPushButton("Create Account")
+        self.register_button.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        self.register_button.setCursor(Qt.PointingHandCursor)
+        self.register_button.setStyleSheet("""
+            QPushButton {
+                background-color: #42A5F5;
+                color: white;
+                border-radius: 12px;
+                padding: 12px;
+            }
+            QPushButton:hover {
+                background-color: #1E88E5;
+            }
+            QPushButton:pressed {
+                background-color: #1565C0;
+            }
+        """)
+        self.register_button.clicked.connect(self.handle_register)
+
+        # --- Add All Widgets to Box ---
+        box_layout.addLayout(user_layout)
+        box_layout.addLayout(email_layout)
+        box_layout.addLayout(pass_layout)
+        box_layout.addLayout(confirm_layout)
+        box_layout.addSpacing(10)
+        box_layout.addWidget(self.register_button, alignment=Qt.AlignCenter)
+
+        # Add box to main layout
+        main_layout.addWidget(box, alignment=Qt.AlignCenter)
+
+        self.setLayout(main_layout)
+
+    # =============================
+    # ✅ Registration Logic
+    # =============================
     def handle_register(self):
-        """Validate registration inputs"""
         username = self.username_input.text().strip()
         email = self.email_input.text().strip()
         password = self.password_input.text().strip()
         confirm = self.confirm_input.text().strip()
 
-        if not username or not email or not password:
+        if not username or not email or not password or not confirm:
             QMessageBox.warning(self, "Error", "Please fill in all fields")
             return
 
@@ -137,16 +153,14 @@ class RegisterWindow(QWidget):
             return
 
         if len(password) < 6:
-            QMessageBox.warning(self, "Error", "Password must be at least 6 characters")
+            QMessageBox.warning(self, "Error", "Password must be at least 6 characters long")
             return
 
         # ✅ Registration success
         QMessageBox.information(
             self,
             "Registration Successful",
-            "Account created successfully!\nPlease login to continue."
+            "Your account has been created successfully!\nPlease login to continue."
         )
-
-        # Emit success signal and close window
         self.register_success.emit()
         self.close()
