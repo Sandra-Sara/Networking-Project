@@ -1,7 +1,7 @@
 """
 File Transfer Window for CryptPort
 Styled consistently with Register and Config pages
-Now includes working 'Open Folder' feature.
+Now includes 'Encryption' and 'History' buttons for navigation.
 """
 
 import os
@@ -17,7 +17,9 @@ from PyQt5.QtGui import QFont, QColor, QPalette
 
 class FileTab(QWidget):
     """File Transfer Page"""
-    disconnect_requested = pyqtSignal()  # 🔙 Go back to connection page
+    disconnect_requested = pyqtSignal()   # 🔙 Go back to connection page
+    open_encryption_requested = pyqtSignal()  # ➡️ Go to encryption page
+    open_history_requested = pyqtSignal()     # ➡️ Go to history page
 
     def __init__(self):
         super().__init__()
@@ -158,6 +160,7 @@ class FileTab(QWidget):
         bottom_row.setSpacing(30)
         bottom_row.setAlignment(Qt.AlignCenter)
 
+        # Disconnect
         self.disconnect_btn = QPushButton("🔙 Disconnect")
         self.disconnect_btn.setFont(QFont("Segoe UI", 12, QFont.Bold))
         self.disconnect_btn.setCursor(Qt.PointingHandCursor)
@@ -172,9 +175,41 @@ class FileTab(QWidget):
         """)
         self.disconnect_btn.clicked.connect(self.disconnect_requested.emit)
 
-        bottom_row.addWidget(self.disconnect_btn)
-        main_layout.addLayout(bottom_row)
+        # Encryption Button
+        self.encryption_btn = QPushButton("🛡️ Encryption / Decryption")
+        self.encryption_btn.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        self.encryption_btn.setCursor(Qt.PointingHandCursor)
+        self.encryption_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #81C784;
+                color: white;
+                border-radius: 10px;
+                padding: 10px 25px;
+            }
+            QPushButton:hover { background-color: #66BB6A; }
+        """)
+        self.encryption_btn.clicked.connect(self.open_encryption_requested.emit)
 
+        # History Button
+        self.history_btn = QPushButton("📜 History")
+        self.history_btn.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        self.history_btn.setCursor(Qt.PointingHandCursor)
+        self.history_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FFD54F;
+                color: black;
+                border-radius: 10px;
+                padding: 10px 25px;
+            }
+            QPushButton:hover { background-color: #FFCA28; }
+        """)
+        self.history_btn.clicked.connect(self.open_history_requested.emit)
+
+        bottom_row.addWidget(self.disconnect_btn)
+        bottom_row.addWidget(self.encryption_btn)
+        bottom_row.addWidget(self.history_btn)
+
+        main_layout.addLayout(bottom_row)
         self.setLayout(main_layout)
 
         # State
