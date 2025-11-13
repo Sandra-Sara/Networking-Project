@@ -1,466 +1,226 @@
 """
-Connection tab UI components with modern design
+ConnectionTab (CryptPort)
+Beautifully styled connection window that links with main.py and file_tab.py
 """
 
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QGroupBox, 
-                           QLineEdit, QPushButton, QLabel, QHBoxLayout, QFrame,
-                           QStackedWidget)
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QLabel, QPushButton, QLineEdit,
+    QMessageBox, QHBoxLayout, QFrame, QFormLayout
+)
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QFont
-from .loading_spinner import LoadingSpinner
-from config import AppConfig 
+from PyQt5.QtGui import QFont, QColor, QPalette
+
 
 class ConnectionTab(QWidget):
-    """Connection tab widget with modern design"""
-    
-    connection_requested = pyqtSignal(str, int)
+    """Connection interface after server configuration"""
+
+    # ✅ Signals to communicate with main.py
+    connection_requested = pyqtSignal(str, int, str, str)
     disconnection_requested = pyqtSignal()
-    
-    def __init__(self):
+
+    def __init__(self, config_data=None):  # ✅ Fixed: double underscores
         super().__init__()
-        self.is_connected = False
-        self.setup_ui()
-    
-    def setup_ui(self):
-        """Setup the connection UI with modern design"""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(30)
-        
-        # Create stacked widget for different states
-        self.stacked_widget = QStackedWidget()
-        layout.addWidget(self.stacked_widget)
-        
-        # Create pages
-        self.disconnected_page = self.create_disconnected_page()
-        self.connected_page = self.create_connected_page()
-        
-        # Add pages to stack
-        self.stacked_widget.addWidget(self.disconnected_page)
-        self.stacked_widget.addWidget(self.connected_page)
-        
-        # Start with disconnected page
-        self.stacked_widget.setCurrentWidget(self.disconnected_page)
-    
-    def create_disconnected_page(self):
-        """Create the disconnected state page"""
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setAlignment(Qt.AlignTop)
-        layout.setSpacing(30)
-        
-        # Header section
-        header_frame = QFrame()
-        header_frame.setFrameStyle(QFrame.Box)
-        header_frame.setStyleSheet("""
+        self.config_data = config_data or {}
+        self.connected = False
+        self.init_ui()
+
+    def init_ui(self):
+        """Setup UI"""
+        self.setWindowTitle("Server Connection - CryptPort")
+        self.setFixedSize(950, 720)
+
+        # Light blue background
+        palette = QPalette()
+        palette.setColor(QPalette.Window, QColor("#E3F2FD"))
+        self.setAutoFillBackground(True)
+        self.setPalette(palette)
+
+        # --- Main layout ---
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setSpacing(25)
+
+        # --- Title ---
+        title = QLabel("🔗 Connect to CryptPort Server")
+        title.setFont(QFont("Segoe UI", 26, QFont.Bold))
+        title.setAlignment(Qt.AlignCenter)
+
+        subtitle = QLabel("Enter your server credentials to begin your secure session ⚡")
+        subtitle.setFont(QFont("Segoe UI", 13))
+        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setStyleSheet("color: gray; font-weight: 500;")
+
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+
+        # --- Connection Box ---
+        box = QFrame()
+        box.setFixedWidth(520)
+        box.setStyleSheet("""
             QFrame {
-                background-color: #f8f9fa;
-                border: 2px solid #e9ecef;
-                border-radius: 10px;
-                padding: 20px;
-            }
-        """)
-        
-        header_layout = QVBoxLayout(header_frame)
-        header_layout.setAlignment(Qt.AlignCenter)
-        header_layout.setSpacing(15)
-        
-        # Title
-        title_label = QLabel("Socket Server Connection")
-        title_font = QFont()
-        title_font.setPointSize(20)
-        title_font.setBold(True)
-        title_label.setFont(title_font)
-        title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("color: #2c3e50; margin: 10px;")
-        header_layout.addWidget(title_label)
-        
-        # Status
-        self.disconnected_status_label = QLabel("Ready to connect")
-        status_font = QFont()
-        status_font.setPointSize(12)
-        self.disconnected_status_label.setFont(status_font)
-        self.disconnected_status_label.setAlignment(Qt.AlignCenter)
-        self.disconnected_status_label.setStyleSheet("color: #7f8c8d; margin: 5px;")
-        header_layout.addWidget(self.disconnected_status_label)
-        
-        layout.addWidget(header_frame)
-        
-        # Connection form
-        conn_group = QGroupBox("Server Configuration")
-        conn_group.setStyleSheet("""
-            QGroupBox {
-                font-size: 16px;
-                font-weight: bold;
-                margin-top: 10px;
-                padding-top: 15px;
-                border: 2px solid #e9ecef;
-                border-radius: 8px;
                 background-color: white;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 15px;
-                padding: 0 10px 0 10px;
-                color: #2c3e50;
+                border-radius: 16px;
+                border: 2px solid #BBDEFB;
             }
         """)
-        conn_layout = QFormLayout(conn_group)
-        conn_layout.setSpacing(20)
-        
-        # Host input - use centralized config for default
-        default_host, default_port = AppConfig.get_socket_config()
-        self.host_input = QLineEdit(default_host)
-        self.host_input.setPlaceholderText("Enter server hostname or IP address")
-        self.host_input.setMinimumHeight(40)
-        self.host_input.setStyleSheet("""
-            QLineEdit {
-                border: 2px solid #bdc3c7;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-                background-color: white;
-            }
-            QLineEdit:focus {
-                border-color: #3498db;
-            }
-        """)
-        conn_layout.addRow("Host:", self.host_input)
-        
-        # Port input - use centralized config for default
-        self.port_input = QLineEdit(str(default_port))
-        self.port_input.setPlaceholderText("Enter port number")
-        self.port_input.setMinimumHeight(40)
-        self.port_input.setStyleSheet("""
-            QLineEdit {
-                border: 2px solid #bdc3c7;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-                background-color: white;
-            }
-            QLineEdit:focus {
-                border-color: #3498db;
-            }
-        """)
-        conn_layout.addRow("Port:", self.port_input)
-        
-        # Connect button with loading state
-        connect_button_layout = QHBoxLayout()
+
+        form_layout = QFormLayout(box)
+        form_layout.setContentsMargins(60, 50, 60, 50)
+        form_layout.setSpacing(20)
+
+        input_font = QFont("Segoe UI", 12)
+
+        # --- Input Fields ---
+        self.server_input = QLineEdit()
+        self.server_input.setPlaceholderText("Server IP Address")
+        self._style_input(self.server_input, input_font)
+
+        self.port_input = QLineEdit()
+        self.port_input.setPlaceholderText("Port (e.g. 8080)")
+        self._style_input(self.port_input, input_font)
+
+        self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("Username")
+        self._style_input(self.username_input, input_font)
+
+        self.password_input = QLineEdit()
+        self.password_input.setPlaceholderText("Password")
+        self.password_input.setEchoMode(QLineEdit.Password)
+        self._style_input(self.password_input, input_font)
+
+        form_layout.addRow("🌐 Server IP:", self.server_input)
+        form_layout.addRow("⚙ Port:", self.port_input)
+        form_layout.addRow("👤 Username:", self.username_input)
+        form_layout.addRow("🔑 Password:", self.password_input)
+
+        # --- Connection Buttons ---
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(15)
+
         self.connect_btn = QPushButton("Connect to Server")
-        self.connect_btn.setMinimumHeight(50)
-        self.connect_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #3498db;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 16px;
-                font-weight: bold;
-                padding: 15px 30px;
-            }
-            QPushButton:hover {
-                background-color: #2980b9;
-            }
-            QPushButton:pressed {
-                background-color: #21618c;
-            }
-            QPushButton:disabled {
-                background-color: #bdc3c7;
-            }
-        """)
-        self.connect_btn.clicked.connect(self.on_connect_clicked)
-        
-        self.connect_spinner = LoadingSpinner()
-        self.connect_spinner.hide()
-        
-        connect_button_layout.addWidget(self.connect_btn)
-        connect_button_layout.addWidget(self.connect_spinner)
-        connect_button_layout.addStretch()
-        
-        conn_layout.addRow(connect_button_layout)
-        
-        layout.addWidget(conn_group)
-        
-        # Token info section
-        token_group = QGroupBox("Authentication Status")
-        token_group.setStyleSheet("""
-            QGroupBox {
-                font-size: 16px;
-                font-weight: bold;
-                margin-top: 10px;
-                padding-top: 15px;
-                border: 2px solid #e9ecef;
-                border-radius: 8px;
-                background-color: white;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 15px;
-                padding: 0 10px 0 10px;
-                color: #2c3e50;
-            }
-        """)
-        token_layout = QFormLayout(token_group)
-        token_layout.setSpacing(15)
-        
-        self.token_display = QLineEdit()
-        self.token_display.setReadOnly(True)
-        self.token_display.setPlaceholderText("Login first to get authentication token")
-        self.token_display.setMinimumHeight(40)
-        self.token_display.setStyleSheet("""
+        self.disconnect_btn = QPushButton("Disconnect")
+
+        self._style_button(self.connect_btn, "#42A5F5", "#1E88E5", "#1565C0")
+        self._style_button(self.disconnect_btn, "#E53935", "#D32F2F", "#B71C1C")
+
+        self.connect_btn.clicked.connect(self.handle_connect)
+        self.disconnect_btn.clicked.connect(self.handle_disconnect)
+
+        self.disconnect_btn.setEnabled(False)
+
+        btn_layout.addWidget(self.connect_btn)
+        btn_layout.addWidget(self.disconnect_btn)
+        form_layout.addRow(btn_layout)
+
+        # --- Status Label ---
+        self.status_label = QLabel("🟥 Status: Disconnected")
+        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        self.status_label.setStyleSheet("color: #E53935;")
+        form_layout.addRow(self.status_label)
+
+        layout.addWidget(box, alignment=Qt.AlignCenter)
+        self.setLayout(layout)
+
+        # ✅ Load data from config if available
+        self.load_previous_config()
+
+    # ============================
+    # STYLE HELPERS
+    # ============================
+    def _style_input(self, field: QLineEdit, font: QFont):
+        field.setFont(font)
+        field.setStyleSheet("""
             QLineEdit {
-                border: 2px solid #e9ecef;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-                background-color: #f8f9fa;
-                color: #7f8c8d;
-            }
-        """)
-        token_layout.addRow("Token:", self.token_display)
-        
-        layout.addWidget(token_group)
-        layout.addStretch()
-        
-        return page
-    
-    def create_connected_page(self):
-        """Create the connected state page"""
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setAlignment(Qt.AlignTop)
-        layout.setSpacing(30)
-        
-        # Success status section
-        status_frame = QFrame()
-        status_frame.setFrameStyle(QFrame.Box)
-        status_frame.setStyleSheet("""
-            QFrame {
-                background-color: #d5f4e6;
-                border: 2px solid #27ae60;
+                border: 1.5px solid #90CAF9;
                 border-radius: 10px;
-                padding: 20px;
+                padding: 10px;
+                background-color: #FAFAFA;
+            }
+            QLineEdit:focus {
+                border: 2px solid #42A5F5;
+                background-color: #FFFFFF;
             }
         """)
-        
-        status_layout = QVBoxLayout(status_frame)
-        status_layout.setAlignment(Qt.AlignCenter)
-        status_layout.setSpacing(15)
-        
-        # Success icon/text
-        success_label = QLabel("✓ Connected to Server")
-        success_font = QFont()
-        success_font.setPointSize(20)
-        success_font.setBold(True)
-        success_label.setFont(success_font)
-        success_label.setAlignment(Qt.AlignCenter)
-        success_label.setStyleSheet("color: #27ae60; margin: 10px;")
-        status_layout.addWidget(success_label)
-        
-        # Connection details
-        self.connection_details_label = QLabel("Connected to localhost:8889")
-        details_font = QFont()
-        details_font.setPointSize(14)
-        self.connection_details_label.setFont(details_font)
-        self.connection_details_label.setAlignment(Qt.AlignCenter)
-        self.connection_details_label.setStyleSheet("color: #2c3e50; margin: 5px;")
-        status_layout.addWidget(self.connection_details_label)
-        
-        # Status message
-        status_message = QLabel("File transfer operations are now available")
-        status_message.setAlignment(Qt.AlignCenter)
-        status_message.setStyleSheet("color: #7f8c8d; margin: 5px;")
-        status_layout.addWidget(status_message)
-        
-        layout.addWidget(status_frame)
-        
-        # Connection info section
-        info_group = QGroupBox("Connection Information")
-        info_group.setStyleSheet("""
-            QGroupBox {
-                font-size: 16px;
-                font-weight: bold;
-                margin-top: 10px;
-                padding-top: 15px;
-                border: 2px solid #e9ecef;
-                border-radius: 8px;
-                background-color: white;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 15px;
-                padding: 0 10px 0 10px;
-                color: #2c3e50;
-            }
-        """)
-        info_layout = QFormLayout(info_group)
-        info_layout.setSpacing(15)
-        
-        # Server details (read-only)
-        self.connected_host_display = QLineEdit()
-        self.connected_host_display.setReadOnly(True)
-        self.connected_host_display.setMinimumHeight(35)
-        self.connected_host_display.setStyleSheet("""
-            QLineEdit {
-                border: 2px solid #e9ecef;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-                background-color: #f8f9fa;
-                color: #2c3e50;
-            }
-        """)
-        info_layout.addRow("Server Host:", self.connected_host_display)
-        
-        self.connected_port_display = QLineEdit()
-        self.connected_port_display.setReadOnly(True)
-        self.connected_port_display.setMinimumHeight(35)
-        self.connected_port_display.setStyleSheet("""
-            QLineEdit {
-                border: 2px solid #e9ecef;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-                background-color: #f8f9fa;
-                color: #2c3e50;
-            }
-        """)
-        info_layout.addRow("Server Port:", self.connected_port_display)
-        
-        # Current token display
-        self.connected_token_display = QLineEdit()
-        self.connected_token_display.setReadOnly(True)
-        self.connected_token_display.setMinimumHeight(35)
-        self.connected_token_display.setStyleSheet("""
-            QLineEdit {
-                border: 2px solid #e9ecef;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-                background-color: #f8f9fa;
-                color: #7f8c8d;
-            }
-        """)
-        info_layout.addRow("Auth Token:", self.connected_token_display)
-        
-        layout.addWidget(info_group)
-        
-        # Disconnect button
-        disconnect_layout = QHBoxLayout()
-        self.disconnect_btn = QPushButton("Disconnect from Server")
-        self.disconnect_btn.setMinimumHeight(50)
-        self.disconnect_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e74c3c;
+
+    def _style_button(self, button: QPushButton, color, hover, pressed):
+        button.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        button.setCursor(Qt.PointingHandCursor)
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {color};
                 color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 16px;
-                font-weight: bold;
-                padding: 15px 30px;
-            }
-            QPushButton:hover {
-                background-color: #c0392b;
-            }
-            QPushButton:pressed {
-                background-color: #a93226;
-            }
+                border-radius: 10px;
+                padding: 10px;
+            }}
+            QPushButton:hover {{
+                background-color: {hover};
+            }}
+            QPushButton:pressed {{
+                background-color: {pressed};
+            }}
         """)
-        self.disconnect_btn.clicked.connect(self.disconnection_requested.emit)
-        
-        disconnect_layout.addWidget(self.disconnect_btn)
-        disconnect_layout.addStretch()
-        
-        layout.addLayout(disconnect_layout)
-        layout.addStretch()
-        
-        return page
-    
-    def on_connect_clicked(self):
-        """Handle connect button click"""
+
+    # ============================
+    # EVENT HANDLERS
+    # ============================
+    def handle_connect(self):
+        """Emit connection signal"""
+        server_ip = self.server_input.text().strip()
+        port = self.port_input.text().strip()
+        username = self.username_input.text().strip()
+        password = self.password_input.text().strip()
+
+        if not all([server_ip, port, username, password]):
+            self.show_message("Error", "Please fill in all fields.", QMessageBox.Warning)
+            return
+
         try:
-            host = self.host_input.text().strip()
-            port = int(self.port_input.text().strip())
-            
-            # Set loading state
-            self.set_connecting_state(True)
-            
-            # Emit connection request
-            self.connection_requested.emit(host, port)
+            port = int(port)
         except ValueError:
-            self.set_connecting_state(False)
-            self.disconnected_status_label.setText("Invalid port number")
-            self.disconnected_status_label.setStyleSheet("color: #e74c3c; font-weight: bold;")
-    
-    def set_connecting_state(self, connecting=True):
-        """Set connecting loading state"""
-        if connecting:
-            self.connect_btn.setText("Connecting...")
-            self.connect_btn.setEnabled(False)
-            self.connect_spinner.show()
-            self.connect_spinner.start()
-            self.host_input.setEnabled(False)
-            self.port_input.setEnabled(False)
-            self.disconnected_status_label.setText("Establishing connection...")
-            self.disconnected_status_label.setStyleSheet("color: #f39c12; font-weight: bold;")
-        else:
-            self.connect_btn.setText("Connect to Server")
-            self.connect_btn.setEnabled(True)
-            self.connect_spinner.stop()
-            self.connect_spinner.hide()
-            self.host_input.setEnabled(True)
-            self.port_input.setEnabled(True)
-            if not self.is_connected:
-                self.disconnected_status_label.setText("Ready to connect")
-                self.disconnected_status_label.setStyleSheet("color: #7f8c8d; font-weight: normal;")
-    
-    def get_connection_details(self) -> tuple[str, int]:
-        """Get host and port from inputs"""
-        return self.host_input.text().strip(), int(self.port_input.text().strip())
-    
-    def set_token_display(self, token: str):
-        """Set the token display"""
-        display_token = token[:50] + "..." if len(token) > 50 else token
-        self.token_display.setText(display_token)
-        self.connected_token_display.setText(display_token)
-    
-    def clear_token_display(self):
-        """Clear the token display"""
-        self.token_display.clear()
-        self.connected_token_display.clear()
-    
+            self.show_message("Error", "Port must be a number.", QMessageBox.Warning)
+            return
+
+        # ✅ Emit to main.py (to handle the actual connection)
+        self.connection_requested.emit(server_ip, port, username, password)
+
+    def handle_disconnect(self):
+        """Emit disconnection signal"""
+        if not self.connected:
+            self.show_message("Info", "Already disconnected.", QMessageBox.Information)
+            return
+
+        self.disconnection_requested.emit()
+
     def update_connection_status(self, connected: bool, message: str = ""):
-        """Update connection status and switch pages"""
-        self.is_connected = connected
-        self.set_connecting_state(False)  # Reset loading state
-        
+        """Update UI when connection state changes (called by main.py)"""
+        self.connected = connected
         if connected:
-            # Update connected page info
-            host, port = self.get_connection_details()
-            self.connection_details_label.setText(f"Connected to {host}:{port}")
-            self.connected_host_display.setText(host)
-            self.connected_port_display.setText(str(port))
-            
-            # Switch to connected page
-            self.stacked_widget.setCurrentWidget(self.connected_page)
+            self.status_label.setText("🟩 Status: Connected")
+            self.status_label.setStyleSheet("color: #43A047;")
+            self.connect_btn.setEnabled(False)
+            self.disconnect_btn.setEnabled(True)
         else:
-            # Update disconnected page status
-            if message:
-                if "error" in message.lower() or "failed" in message.lower():
-                    self.disconnected_status_label.setText(message)
-                    self.disconnected_status_label.setStyleSheet("color: #e74c3c; font-weight: bold;")
-                else:
-                    self.disconnected_status_label.setText(message)
-                    self.disconnected_status_label.setStyleSheet("color: #7f8c8d; font-weight: normal;")
-            else:
-                self.disconnected_status_label.setText("Not connected")
-                self.disconnected_status_label.setStyleSheet("color: #7f8c8d; font-weight: normal;")
-            
-            # Switch to disconnected page
-            self.stacked_widget.setCurrentWidget(self.disconnected_page)
-    
-    def handle_connection_error(self, error_message: str):
-        """Handle connection error"""
-        self.set_connecting_state(False)
-        self.disconnected_status_label.setText(f"Connection failed: {error_message}")
-        self.disconnected_status_label.setStyleSheet("color: #e74c3c; font-weight: bold;")
+            self.status_label.setText("🟥 Status: Disconnected")
+            self.status_label.setStyleSheet("color: #E53935;")
+            self.connect_btn.setEnabled(True)
+            self.disconnect_btn.setEnabled(False)
+
+        if message:
+            self.show_message("Connection Status", message, QMessageBox.Information)
+
+    def load_previous_config(self):
+        """Load previously saved configuration"""
+        if not self.config_data:
+            return
+        self.server_input.setText(self.config_data.get("server_ip", ""))
+        self.port_input.setText(self.config_data.get("port", ""))
+        self.username_input.setText(self.config_data.get("username", ""))
+        self.password_input.setText(self.config_data.get("password", ""))
+
+    def show_message(self, title, text, icon):
+        msg = QMessageBox(self)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.setIcon(icon)
+        msg.exec_()
