@@ -1,6 +1,6 @@
 """
 Main controller for CryptPort App
-Handles window transitions: Register → Login → Config → Connection → File Transfer
+Handles window transitions: Register → Login → Config → Connection → File Transfer → Encryption / History
 """
 
 import sys
@@ -12,7 +12,7 @@ from ui.connection_tab import ConnectionTab
 
 
 class ConnectionWindow(QMainWindow):
-    """Wrapper window for the ConnectionTab"""
+    """Wrapper window for the ConnectionTab and other related tabs"""
 
     def __init__(self, controller, config_data=None):
         super().__init__()
@@ -54,8 +54,28 @@ class ConnectionWindow(QMainWindow):
         self.file_tab = FileTab()
         self.setCentralWidget(self.file_tab)
 
-        # ✅ Connect FileTab disconnect signal
+        # ✅ Connect signals
         self.file_tab.disconnect_requested.connect(self.return_to_config_window)
+        self.file_tab.open_encryption_requested.connect(self.open_encryption_tab)
+        self.file_tab.open_history_requested.connect(self.open_history_tab)
+
+    def open_encryption_tab(self):
+        """Navigate to Encryption/Decryption tab"""
+        from ui.encryption_tab import EncryptionTab
+        self.encryption_tab = EncryptionTab()
+        self.setCentralWidget(self.encryption_tab)
+
+        # ✅ Add a way back to FileTab
+        self.encryption_tab.back_requested.connect(self.open_file_tab)
+
+    def open_history_tab(self):
+        """Navigate to History tab"""
+        from ui.history_tab import HistoryTab
+        self.history_tab = HistoryTab()
+        self.setCentralWidget(self.history_tab)
+
+        # ✅ Add a way back to FileTab
+        self.history_tab.back_requested.connect(self.open_file_tab)
 
     def return_to_config_window(self):
         """Return to the server config page when disconnect is clicked"""
@@ -118,7 +138,6 @@ class AppController:
 
         # ✅ Updated signal
         self.config_window.config_complete.connect(self.show_connection_window)
-
         self.config_window.show()
 
     # ========================
