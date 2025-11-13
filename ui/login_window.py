@@ -41,7 +41,7 @@ class LoginWindow(QWidget):
         title.setFont(QFont("Segoe UI", 26, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
 
-        subtitle = QLabel("Secure access to your file sharing system ⚡")
+        subtitle = QLabel("Secure access to your file sharing system")
         subtitle.setFont(QFont("Segoe UI", 13))
         subtitle.setAlignment(Qt.AlignCenter)
         subtitle.setStyleSheet("color: gray; font-weight: 500;")
